@@ -2,15 +2,11 @@ const os = require('os');
 const fs = require('fs');
 const net = require('net');
 const http = require('http');
-const axios = require('axios');
 const { Buffer } = require('buffer');
 const { exec, execSync } = require('child_process');
 
 // 环境变量
-const UUID = process.env.UUID || 'ee1feada-4e2f-4dc3-aaa6-f97aeed0286b'; // 使用哪吒v1，在不同的平台部署需修改UUID，否则会覆盖
-const NEZHA_SERVER = process.env.NEZHA_SERVER || '';       // 哪吒v1填写形式：nz.abc.com:8008   哪吒v0填写形式：nz.abc.com
-const NEZHA_PORT = process.env.NEZHA_PORT || '';           // 哪吒v1没有此变量，v0的agent端口为{443,8443,2096,2087,2083,2053}其中之一时开启tls
-const NEZHA_KEY = process.env.NEZHA_KEY || '';             // v1的NZ_CLIENT_SECRET或v0的agent端口  
+const UUID = process.env.UUID || 'ee1feada-4e2f-4dc3-aaa6-f97aeed0286b';
 const AUTO_ACCESS = process.env.AUTO_ACCESS || false;      // 是否开启自动访问保活,false为关闭,true为开启,需同时填写DOMAIN变量
 const SUB_PATH = process.env.SUB_PATH || 'sub';            // 节点订阅路径
 const XPATH = process.env.XPATH || 'xhttp';                // xhttp路径
@@ -83,101 +79,6 @@ function log(type, ...args) {
     }
 }
 
-const getDownloadUrl = () => {
-    const arch = os.arch(); 
-    if (arch === 'arm' || arch === 'arm64' || arch === 'aarch64') {
-      if (!NEZHA_PORT) {
-        return 'https://arm64.ssss.nyc.mn/v1';
-      } else {
-          return 'https://arm64.ssss.nyc.mn/agent';
-      }
-    } else {
-      if (!NEZHA_PORT) {
-        return 'https://amd64.ssss.nyc.mn/v1';
-      } else {
-          return 'https://amd64.ssss.nyc.mn/agent';
-      }
-    }
-};
-  
-const downloadFile = async () => {
-    try {
-      const url = getDownloadUrl();
-      // console.log(`Start downloading file from ${url}`);
-      const response = await axios({
-        method: 'get',
-        url: url,
-        responseType: 'stream'
-      });
-  
-      const writer = fs.createWriteStream('npm');
-      response.data.pipe(writer);
-  
-      return new Promise((resolve, reject) => {
-        writer.on('finish', () => {
-          console.log('npm download successfully');
-          exec('chmod +x npm', (err) => {
-            if (err) reject(err);
-            resolve();
-          });
-        });
-        writer.on('error', reject);
-      });
-    } catch (err) {
-      throw err;
-    }
-};
-  
-const runnz = async () => {
-    await downloadFile();
-    let NEZHA_TLS = '';
-    let command = '';
-  
-    if (NEZHA_SERVER && NEZHA_PORT && NEZHA_KEY) {
-      const tlsPorts = ['443', '8443', '2096', '2087', '2083', '2053'];
-      NEZHA_TLS = tlsPorts.includes(NEZHA_PORT) ? '--tls' : '';
-      command = `nohup ./npm -s ${NEZHA_SERVER}:${NEZHA_PORT} -p ${NEZHA_KEY} ${NEZHA_TLS} >/dev/null 2>&1 &`;
-    } else if (NEZHA_SERVER && NEZHA_KEY) {
-      if (!NEZHA_PORT) {
-        const configYaml = `
-client_secret: ${NEZHA_KEY}
-debug: false
-disable_auto_update: true
-disable_command_execute: false
-disable_force_update: true
-disable_nat: false
-disable_send_query: false
-gpu: false
-insecure_tls: false
-ip_report_period: 1800
-report_delay: 1
-server: ${NEZHA_SERVER}
-skip_connection_count: false
-skip_procs_count: false
-temperature: false
-tls: false
-use_gitee_to_upgrade: false
-use_ipv6_country_code: false
-uuid: ${UUID}`;
-        
-        fs.writeFileSync('config.yaml', configYaml);
-      }
-      command = `nohup ./npm -c config.yaml >/dev/null 2>&1 &`;
-    } else {
-      console.log('NEZHA variable is empty, skip running');
-      return;
-    }
-  
-    try {
-      exec(command, { 
-        shell: '/bin/bash'
-      });
-      console.log('npm is running');
-    } catch (error) {
-      console.error(`npm running error: ${error}`);
-    } 
-};
-  
 async function addAccessTask() {
     if (!AUTO_ACCESS) return;
     try {
@@ -531,6 +432,7 @@ function relay(cfg, client, remote, vless) {
         .finally(() => uploader)
         .finally(cleanup);
 }
+
 // 会话管理
 const sessions = new Map();
 
@@ -935,26 +837,17 @@ server.keepAliveTimeout = 620000;
 server.headersTimeout = 625000;   
 
 server.on('error', (err) => {
-    log('error', `Server error: ${err.message}`);
+  log('error', `Server error: ${err.message}`);
 });
 
-const delFiles = () => {
-    runnz ();
-    fs.unlink('npm', () => {});
-    fs.unlink('config.yaml', () => {}); 
-};
-
 server.listen(PORT, () => {
-    setTimeout(() => {
-      delFiles();
-    }, 30000);
-    addAccessTask();
-    console.log(`Server is running on port ${PORT}`);
-    log('info', `=================================`);
-    log('info', `Log level: ${SETTINGS.LOG_LEVEL}`);
-    log('info', `Max buffered posts: ${SETTINGS.MAX_BUFFERED_POSTS}`);
-    log('info', `Max POST size: ${SETTINGS.MAX_POST_SIZE}KB`);
-    log('info', `Max buffer size: ${SETTINGS.BUFFER_SIZE}KB`)
-    log('info', `Session timeout: ${SETTINGS.CHUNK_SIZE}bytes`);
-    log('info', `=================================`);
+  addAccessTask();
+  console.log(`Server is running on port ${PORT}`);
+  log('info', `=================================`);
+  log('info', `Log level: ${SETTINGS.LOG_LEVEL}`);
+  log('info', `Max buffered posts: ${SETTINGS.MAX_BUFFERED_POSTS}`);
+  log('info', `Max POST size: ${SETTINGS.MAX_POST_SIZE}KB`);
+  log('info', `Max buffer size: ${SETTINGS.BUFFER_SIZE}KB`)
+  log('info', `Session timeout: ${SETTINGS.CHUNK_SIZE}bytes`);
+  log('info', `=================================`);
 });
