@@ -12,7 +12,7 @@ const SUB_PATH = process.env.SUB_PATH || 'sub';            // 节点订阅路径
 const XPATH = process.env.XPATH || 'xhttp';                // xhttp路径
 const DOMAIN = process.env.DOMAIN || '';                   // 域名或ip,留空将自动获取服务器ip
 const NAME = process.env.NAME || 'Vls';                    // 节点名称
-const PORT = process.env.PORT || 3000;                     // http服务
+const PORT = process.env.PORT || 5000;                     // http服务
 
 // 核心配置
 const SETTINGS = {
