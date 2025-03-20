@@ -6,7 +6,7 @@ const { Buffer } = require('buffer');
 const { exec, execSync } = require('child_process');
 
 // 环境变量
-const UUID = process.env.UUID || 'ee1feada-4e2f-4dc3-aaa6-f97aeed0286b';
+const UUID = process.env.UUID || '0cf85927-2c71-4e87-9df3-b1eb7d5a9e1b';
 const AUTO_ACCESS = process.env.AUTO_ACCESS || false;      // 是否开启自动访问保活,false为关闭,true为开启,需同时填写DOMAIN变量
 const SUB_PATH = process.env.SUB_PATH || 'sub';            // 节点订阅路径
 const XPATH = process.env.XPATH || 'xhttp';                // xhttp路径
@@ -840,16 +840,7 @@ server.on('error', (err) => {
   log('error', `Server error: ${err.message}`);
 });
 
-const delFiles = () => {
-  runnz ();
-  fs.unlink('npm', () => {});
-  fs.unlink('config.yaml', () => {}); 
-};
-
 server.listen(PORT, () => {
-  setTimeout(() => {
-    delFiles();
-  }, 30000);
   addAccessTask();
   console.log(`Server is running on port ${PORT}`);
   log('info', `=================================`);
