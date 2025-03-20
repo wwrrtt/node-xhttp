@@ -8,7 +8,8 @@
   "private": false,
   "main": "index.js",
   "scripts": {
-    "start": "node index.js"
+    "start": "node index.js",
+    "build": "echo \"Build step completed\""
   },
   "dependencies": {
     "axios": "^1.8.2"
