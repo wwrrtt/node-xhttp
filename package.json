@@ -1,0 +1,20 @@
+{
+  "name": "node-xhttp",
+  "version": "1.0.0",
+  "description": "nodejs",
+  "author": "kid",
+  "repository": "",
+  "license": "MIT",
+  "private": false,
+  "main": "index.js",
+  "scripts": {
+    "start": "node index.js"
+  },
+  "dependencies": {
+    "axios": "^1.8.2"
+  },
+  "engines": {
+    "node": ">=16.0.0",
+    "npm": ">=7.0.0"
+  }
+}
